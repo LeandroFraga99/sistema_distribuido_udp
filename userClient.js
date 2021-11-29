@@ -2,7 +2,7 @@ const readline = require("readline");
 const dgram = require("dgram");
 
 const server = {
-  host: "localhost",
+  host: process.argv[2],
   port: 3000,
 };
 
@@ -58,9 +58,7 @@ function conectarServidor() {
           `Você foi conectado com o IP: ${mensagemUsuario.client.address}`
         );
         console.log(`(Digite "exit" para encerrar) \n`);
-        rl.setPrompt(
-          `mensagem de ${mensagemUsuario.client.address} | ${nome}: `
-        );
+        rl.setPrompt(`${mensagemUsuario.client.address} | ${nome}: `);
         iniciar();
         break;
       case "novaConexao":
@@ -71,7 +69,7 @@ function conectarServidor() {
         break;
       case "msg":
         escrever(
-          `${mensagemUsuario.client.address} | ${mensagemUsuario.client.author}: ${mensagemUsuario.message}`
+          `Mensagem recebida de ${mensagemUsuario.client.address} | ${mensagemUsuario.client.author}: ${mensagemUsuario.message}`
         );
         rl.prompt();
         break;
