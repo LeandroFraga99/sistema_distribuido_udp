@@ -1,60 +1,41 @@
 const dgram = require("dgram");
 
 const port = 3000;
-const address = "10.242.198.181";
+const address = process.argv[2];
 
 const clients = [];
 
-const { networkInterfaces } = require("os");
-
-const nets = networkInterfaces();
-const results = Object.create(null); // Or just '{}', an empty object
-
-for (const name of Object.keys(nets)) {
-  for (const net of nets[name]) {
-    // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-    if (net.family === "IPv4" && !net.internal) {
-      if (!results[name]) {
-        results[name] = [];
-      }
-      results[name].push(net.address);
-    }
-  }
-}
-
-console.log(results);
-
-const broadcast = (message, sendingUser, options) => {
+const transmission = (message, sendingUser, options) => {
   const clientsToSend = sendingUser
     ? clients.filter(
-        (client) =>
-          client.address != sendingUser.address ||
-          client.port != sendingUser.port
+        (userClient) =>
+          userClient.address != sendingUser.address ||
+          userClient.port != sendingUser.port
       )
     : clients;
 
   clientsToSend.map((client, index) => {
     if (options?.closeServerAfterSend && clients.length == index) {
-      return sendUniqueMessage(message, client, () => {
+      return oneMessage(message, client, () => {
         server.close();
         console.log(`Server encerrado por ${sendingUser?.author}`);
       });
     }
 
-    sendUniqueMessage(message, client);
+    oneMessage(message, client);
   });
 };
 
-function sendUniqueMessage(message, client, callback) {
-  const msgBuffered = Buffer.from(JSON.stringify(message));
+function oneMessage(msg, userClient, functionCallback) {
+  const msgBuffered = Buffer.from(JSON.stringify(msg));
 
   return server.send(
     msgBuffered,
     0,
     msgBuffered.length,
-    client.port,
-    client.address,
-    callback
+    userClient.port,
+    userClient.address,
+    functionCallback
   );
 }
 
@@ -76,7 +57,7 @@ server.on("message", (message, rinfo) => {
     case "connect":
       const newClient = { author: messageServer.author, ...rinfo };
       clients.push(newClient);
-      broadcast(
+      transmission(
         {
           type: "newConnection",
           client: newClient,
@@ -88,11 +69,11 @@ server.on("message", (message, rinfo) => {
         type: "conectionSuccessful",
         client: newClient,
       };
-      sendUniqueMessage(connectionInfo, newClient);
+      oneMessage(connectionInfo, newClient);
 
       break;
     case "message":
-      broadcast(
+      transmission(
         {
           type: "message",
           message: messageServer.message,
@@ -102,7 +83,7 @@ server.on("message", (message, rinfo) => {
       );
       break;
     case "disconnect":
-      broadcast(
+      transmission(
         {
           type: "disconnect",
           client: client,
