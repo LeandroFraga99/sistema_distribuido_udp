@@ -5,7 +5,8 @@ const address = process.argv[2];
 
 const clients = [];
 
-const transmission = (message, sendingUser, options) => {
+
+const transmission  = (message, sendingUser, options) => {
   const clientsToSend = sendingUser
     ? clients.filter(
         (userClient) =>
@@ -54,38 +55,38 @@ server.on("message", (message, rinfo) => {
   );
 
   switch (messageServer.type) {
-    case "connect":
+    case "conexao":
       const newClient = { author: messageServer.author, ...rinfo };
       clients.push(newClient);
       transmission(
         {
-          type: "newConnection",
+          type: "novaConexao",
           client: newClient,
         },
         newClient
       );
 
       const connectionInfo = {
-        type: "conectionSuccessful",
+        type: "conexaoFeita",
         client: newClient,
       };
       oneMessage(connectionInfo, newClient);
 
       break;
-    case "message":
-      transmission(
+    case "msg":
+      transmission (
         {
-          type: "message",
+          type: "msg",
           message: messageServer.message,
           client: client,
         },
         client
       );
       break;
-    case "disconnect":
-      transmission(
+    case "dc":
+      transmission (
         {
-          type: "disconnect",
+          type: "dc",
           client: client,
         },
         client,
@@ -98,9 +99,9 @@ server.on("message", (message, rinfo) => {
   }
 });
 
-server.on("connect", () => {
-  console.log("connect");
-});
+// server.on("connect", () => {
+//   console.log("connect");
+// });
 
 server.on("listening", () => {
   const serverAddress = server.address();
@@ -110,9 +111,9 @@ server.on("listening", () => {
   );
 });
 
-server.on("close", () => {
-  rl.close();
-});
+// server.on("close", () => {
+//   rl.close();
+// });
 
 server.on("error", (error) => {
   console.log("Server Error");
