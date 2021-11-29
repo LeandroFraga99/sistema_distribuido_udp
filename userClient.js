@@ -2,7 +2,7 @@ const readline = require("readline");
 const dgram = require("dgram");
 
 const server = {
-  host: "10.242.198.181",
+  host: "localhost",
   port: 3000,
 };
 
@@ -12,7 +12,7 @@ const rl = readline.createInterface({
   terminal: false,
 });
 
-function writeMsgTerminal(message) {
+function escrever(message) {
   process.stdout.clearLine(0);
   process.stdout.cursorTo(0);
   console.log(message);
@@ -20,69 +20,69 @@ function writeMsgTerminal(message) {
 
 const userClient = dgram.createSocket("udp4");
 
-let userName;
+let nome;
 rl.question("Informe seu nome: ", (answer) => {
-  userName = answer;
-  connectServer();
+  nome = answer;
+  conectarServidor();
 });
 
-function sendMessage(message, options) {
+function enviarMsg(message, options) {
   const buffer = Buffer.from(JSON.stringify(message));
 
   userClient.send(buffer, 0, buffer.length, server.port, server.host, () => {
-    if (options?.closeServerAfterSendMessage) {
+    if (options?.closeServerAfterenviarMsg) {
       userClient.close();
-      writeMsgTerminal("Conexão encerrada com sucesso!");
+      escrever("Conexão encerrada com sucesso!");
     }
   });
 }
 
-function connectServer() {
+function conectarServidor() {
   userClient.bind();
 
   userClient.on("listening", () => {
-    const connect = {
-      type: "connect",
-      author: userName,
+    const conectar = {
+      type: "conexao",
+      author: nome,
     };
 
-    sendMessage(connect);
+    enviarMsg(conectar);
   });
 
   userClient.on("message", (message) => {
-    const userClientMessage = JSON.parse(String(message));
+    const mensagemUsuario = JSON.parse(String(message));
 
-    switch (userClientMessage.type) {
-      case "conectionSuccessful":
+    switch (mensagemUsuario.type) {
+      case "conexaoFeita":
         console.log(
-          `Você foi conectado com o IP: ${userClientMessage.client.address}`
+          `Você foi conectado com o IP: ${mensagemUsuario.client.address}`
         );
         console.log(`(Digite "exit" para encerrar) \n`);
         rl.setPrompt(
-          `mensagem de ${userClientMessage.client.address} | ${userName}: `
+          `mensagem de ${mensagemUsuario.client.address} | ${nome}: `
         );
-        startChat();
+        iniciar();
         break;
-      case "newConnection":
-        writeMsgTerminal(
-          `O usuario ${userClientMessage.client.author} se conectou ao servidor \n`
-        );
-        rl.prompt();
-        break;
-      case "message":
-        writeMsgTerminal(
-          `${userClientMessage.client.address} | ${userClientMessage.client.author}: ${userClientMessage.message}`
+      case "novaConexao":
+        escrever(
+          `O usuario ${mensagemUsuario.client.author} se conectou ao servidor \n`
         );
         rl.prompt();
         break;
-      case "disconnect":
+      case "msg":
+        escrever(
+          `${mensagemUsuario.client.address} | ${mensagemUsuario.client.author}: ${mensagemUsuario.message}`
+        );
+        rl.prompt();
+        break;
+      case "dc":
         userClient.close();
-        writeMsgTerminal(
-          `A conexão foi encerrada por ${userClientMessage.client.author}!`
+        escrever(
+          `A conexão foi encerrada por ${mensagemUsuario.client.author}!`
         );
         break;
       default:
-        console.log(userClientMessage);
+        console.log(mensagemUsuario);
         break;
     }
   });
@@ -97,7 +97,7 @@ function connectServer() {
   });
 }
 
-function startChat() {
+function iniciar() {
   rl.prompt();
 
   rl.on("line", (input) => {
@@ -108,17 +108,17 @@ function startChat() {
 
     switch (input) {
       case "exit":
-        const disconnectMsg = {
-          type: "disconnect",
+        const dcMsg = {
+          type: "dc",
         };
-        sendMessage(disconnectMsg, { closeServerAfterSendMessage: true });
+        enviarMsg(dcMsg, { closeServerAfterenviarMsg: true });
         break;
       default:
         const message = {
           message: input,
-          type: "message",
+          type: "msg",
         };
-        sendMessage(message);
+        enviarMsg(message);
         break;
     }
   });

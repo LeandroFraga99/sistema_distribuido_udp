@@ -1,28 +1,10 @@
 const dgram = require("dgram");
 
 const port = 3000;
-const address = "10.242.198.181";
+const address = "localhost";
 
 const clients = [];
 
-const { networkInterfaces } = require("os");
-
-const nets = networkInterfaces();
-const results = Object.create(null); // Or just '{}', an empty object
-
-for (const name of Object.keys(nets)) {
-  for (const net of nets[name]) {
-    // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-    if (net.family === "IPv4" && !net.internal) {
-      if (!results[name]) {
-        results[name] = [];
-      }
-      results[name].push(net.address);
-    }
-  }
-}
-
-console.log(results);
 
 const broadcast = (message, sendingUser, options) => {
   const clientsToSend = sendingUser
@@ -73,38 +55,38 @@ server.on("message", (message, rinfo) => {
   );
 
   switch (messageServer.type) {
-    case "connect":
+    case "conexao":
       const newClient = { author: messageServer.author, ...rinfo };
       clients.push(newClient);
       broadcast(
         {
-          type: "newConnection",
+          type: "novaConexao",
           client: newClient,
         },
         newClient
       );
 
       const connectionInfo = {
-        type: "conectionSuccessful",
+        type: "conexaoFeita",
         client: newClient,
       };
       sendUniqueMessage(connectionInfo, newClient);
 
       break;
-    case "message":
+    case "msg":
       broadcast(
         {
-          type: "message",
+          type: "msg",
           message: messageServer.message,
           client: client,
         },
         client
       );
       break;
-    case "disconnect":
+    case "dc":
       broadcast(
         {
-          type: "disconnect",
+          type: "dc",
           client: client,
         },
         client,
@@ -117,9 +99,9 @@ server.on("message", (message, rinfo) => {
   }
 });
 
-server.on("connect", () => {
-  console.log("connect");
-});
+// server.on("connect", () => {
+//   console.log("connect");
+// });
 
 server.on("listening", () => {
   const serverAddress = server.address();
@@ -129,9 +111,9 @@ server.on("listening", () => {
   );
 });
 
-server.on("close", () => {
-  rl.close();
-});
+// server.on("close", () => {
+//   rl.close();
+// });
 
 server.on("error", (error) => {
   console.log("Server Error");
