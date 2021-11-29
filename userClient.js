@@ -2,7 +2,7 @@ const readline = require("readline");
 const dgram = require("dgram");
 
 const server = {
-  host: "localhost",
+  host: "10.242.198.181",
   port: 3000,
 };
 
@@ -50,37 +50,39 @@ function connectServer() {
   });
 
   userClient.on("message", (message) => {
-    const unbufferedMessage = JSON.parse(String(message));
+    const userClientMessage = JSON.parse(String(message));
 
-    switch (unbufferedMessage.type) {
+    switch (userClientMessage.type) {
       case "conectionSuccessful":
         console.log(
-          `Você foi conectado com o IP: ${unbufferedMessage.client.address}`
+          `Você foi conectado com o IP: ${userClientMessage.client.address}`
         );
         console.log(`(Digite "exit" para encerrar) \n`);
-        rl.setPrompt(`${unbufferedMessage.client.address} | ${userName}: `);
+        rl.setPrompt(
+          `mensagem de ${userClientMessage.client.address} | ${userName}: `
+        );
         startChat();
         break;
       case "newConnection":
         writeMsgTerminal(
-          `O usuario ${unbufferedMessage.client.author} se conectou ao servidor \n`
+          `O usuario ${userClientMessage.client.author} se conectou ao servidor \n`
         );
         rl.prompt();
         break;
       case "message":
         writeMsgTerminal(
-          `${unbufferedMessage.client.address} | ${unbufferedMessage.client.author}: ${unbufferedMessage.message}`
+          `${userClientMessage.client.address} | ${userClientMessage.client.author}: ${userClientMessage.message}`
         );
         rl.prompt();
         break;
       case "disconnect":
         userClient.close();
         writeMsgTerminal(
-          `A conexão foi encerrada por ${unbufferedMessage.client.author}!`
+          `A conexão foi encerrada por ${userClientMessage.client.author}!`
         );
         break;
       default:
-        console.log(unbufferedMessage);
+        console.log(userClientMessage);
         break;
     }
   });
@@ -105,11 +107,11 @@ function startChat() {
     }
 
     switch (input) {
-      case 'exit':
-        const messageDisconnect = {
+      case "exit":
+        const disconnectMsg = {
           type: "disconnect",
         };
-        sendMessage(messageDisconnect, { closeServerAfterSendMessage: true });
+        sendMessage(disconnectMsg, { closeServerAfterSendMessage: true });
         break;
       default:
         const message = {

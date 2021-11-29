@@ -1,9 +1,28 @@
 const dgram = require("dgram");
 
 const port = 3000;
-const address = "localhost";
+const address = "10.242.198.181";
 
 const clients = [];
+
+const { networkInterfaces } = require("os");
+
+const nets = networkInterfaces();
+const results = Object.create(null); // Or just '{}', an empty object
+
+for (const name of Object.keys(nets)) {
+  for (const net of nets[name]) {
+    // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+    if (net.family === "IPv4" && !net.internal) {
+      if (!results[name]) {
+        results[name] = [];
+      }
+      results[name].push(net.address);
+    }
+  }
+}
+
+console.log(results);
 
 const broadcast = (message, sendingUser, options) => {
   const clientsToSend = sendingUser
@@ -47,16 +66,15 @@ server.bind({
 });
 
 server.on("message", (message, rinfo) => {
-  const unbufferedMessage = JSON.parse(String(message));
-  console.log(unbufferedMessage);
+  const messageServer = JSON.parse(String(message));
 
   const client = clients.find(
     (client) => client.address == rinfo.address && client.port == rinfo.port
   );
 
-  switch (unbufferedMessage.type) {
+  switch (messageServer.type) {
     case "connect":
-      const newClient = { author: unbufferedMessage.author, ...rinfo };
+      const newClient = { author: messageServer.author, ...rinfo };
       clients.push(newClient);
       broadcast(
         {
@@ -77,7 +95,7 @@ server.on("message", (message, rinfo) => {
       broadcast(
         {
           type: "message",
-          message: unbufferedMessage.message,
+          message: messageServer.message,
           client: client,
         },
         client
@@ -94,7 +112,7 @@ server.on("message", (message, rinfo) => {
       );
       break;
     default:
-      console.log(unbufferedMessage);
+      console.log(messageServer);
       break;
   }
 });
@@ -113,7 +131,6 @@ server.on("listening", () => {
 
 server.on("close", () => {
   rl.close();
-  console.log('Pressione "Ctrl + C" para encerrar.');
 });
 
 server.on("error", (error) => {
